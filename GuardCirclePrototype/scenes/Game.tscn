@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://fihmwstn2k31"]
+
+[ext_resource type="Texture2D" uid="uid://bapakefqxn0at" path="res://testures/blue_circle.png" id="1_ibkli"]
+[ext_resource type="Script" uid="uid://7l761duwfw8b" path="res://scenes/guard_circle.gd" id="2_qbsmt"]
+
+[node name="Game" type="Node" unique_id=259924782]
+
+[node name="Space" type="Node2D" parent="." unique_id=244372465]
+
+[node name="GuardCircle" type="Sprite2D" parent="." unique_id=781901659 node_paths=PackedStringArray("up_arrow", "left_arrow", "right_arrow", "mouse_arrow")]
+position = Vector2(569, 309)
+scale = Vector2(0.02, 0.02)
+texture = ExtResource("1_ibkli")
+script = ExtResource("2_qbsmt")
+up_arrow = NodePath("UpArrow")
+left_arrow = NodePath("LeftArrow")
+right_arrow = NodePath("RightArrow")
+mouse_arrow = NodePath("MouseArrow")
+THRESHOLD = 895.0
+
+[node name="UpArrow" type="Line2D" parent="GuardCircle" unique_id=1594155720]
+points = PackedVector2Array(0, 0)
+closed = true
+width = 100.0
+
+[node name="LeftArrow" type="Line2D" parent="GuardCircle" unique_id=1888255340]
+points = PackedVector2Array(0, 0)
+closed = true
+width = 100.0
+
+[node name="RightArrow" type="Line2D" parent="GuardCircle" unique_id=231920048]
+points = PackedVector2Array(0, 0)
+closed = true
+width = 100.0
+
+[node name="MouseArrow" type="Line2D" parent="GuardCircle" unique_id=1239856960]
+points = PackedVector2Array(0, 0, 0, 0)
+closed = true
+width = 100.0
+default_color = Color(1, 0, 0, 1)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1588024192]
+position = Vector2(569, 309)
