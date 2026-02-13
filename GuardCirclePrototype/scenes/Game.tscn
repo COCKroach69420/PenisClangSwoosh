@@ -1,43 +1,151 @@
 [gd_scene format=3 uid="uid://fihmwstn2k31"]
 
 [ext_resource type="Texture2D" uid="uid://bapakefqxn0at" path="res://testures/blue_circle.png" id="1_ibkli"]
+[ext_resource type="PackedScene" uid="uid://bcwkugn6v3oy7" path="res://addons/godot_state_charts/utilities/state_chart_debugger.tscn" id="1_kiw3p"]
 [ext_resource type="Script" uid="uid://7l761duwfw8b" path="res://scenes/guard_circle.gd" id="2_qbsmt"]
+[ext_resource type="Script" uid="uid://couw105c3bde4" path="res://addons/godot_state_charts/state_chart.gd" id="3_cpr0p"]
+[ext_resource type="Script" uid="uid://jk2jm1g6q853" path="res://addons/godot_state_charts/compound_state.gd" id="4_s0nni"]
+[ext_resource type="Script" uid="uid://cytafq8i1y8qm" path="res://addons/godot_state_charts/atomic_state.gd" id="5_aug50"]
+[ext_resource type="Script" uid="uid://cf1nsco3w0mf6" path="res://addons/godot_state_charts/transition.gd" id="7_400sg"]
 
 [node name="Game" type="Node" unique_id=259924782]
 
+[node name="StateChartDebugger" parent="." unique_id=1394743607 instance=ExtResource("1_kiw3p")]
+scale = Vector2(0.36721817, 0.36836612)
+initial_node_to_watch = NodePath("../GuardCircle/StateChart")
+
 [node name="Space" type="Node2D" parent="." unique_id=244372465]
 
-[node name="GuardCircle" type="Sprite2D" parent="." unique_id=781901659 node_paths=PackedStringArray("up_arrow", "left_arrow", "right_arrow", "mouse_arrow")]
+[node name="GuardCircle" type="Sprite2D" parent="." unique_id=781901659 node_paths=PackedStringArray("left_line", "right_line", "down_line", "mouse_line", "up_guard_button", "left_guard_button", "right_guard_button", "state_machine")]
 position = Vector2(569, 309)
 scale = Vector2(0.02, 0.02)
 texture = ExtResource("1_ibkli")
 script = ExtResource("2_qbsmt")
-up_arrow = NodePath("UpArrow")
-left_arrow = NodePath("LeftArrow")
-right_arrow = NodePath("RightArrow")
-mouse_arrow = NodePath("MouseArrow")
+left_line = NodePath("LeftLine")
+right_line = NodePath("RightLine")
+down_line = NodePath("DownLine")
+mouse_line = NodePath("MouseLine")
+up_guard_button = NodePath("Control/UpGuard")
+left_guard_button = NodePath("Control/LeftGuard")
+right_guard_button = NodePath("Control/RightGuard")
+state_machine = NodePath("StateChart")
 THRESHOLD = 895.0
 
-[node name="UpArrow" type="Line2D" parent="GuardCircle" unique_id=1594155720]
+[node name="LeftLine" type="Line2D" parent="GuardCircle" unique_id=1888255340]
 points = PackedVector2Array(0, 0)
 closed = true
 width = 100.0
 
-[node name="LeftArrow" type="Line2D" parent="GuardCircle" unique_id=1888255340]
+[node name="RightLine" type="Line2D" parent="GuardCircle" unique_id=231920048]
 points = PackedVector2Array(0, 0)
 closed = true
 width = 100.0
 
-[node name="RightArrow" type="Line2D" parent="GuardCircle" unique_id=231920048]
+[node name="DownLine" type="Line2D" parent="GuardCircle" unique_id=1594155720]
 points = PackedVector2Array(0, 0)
 closed = true
 width = 100.0
 
-[node name="MouseArrow" type="Line2D" parent="GuardCircle" unique_id=1239856960]
+[node name="MouseLine" type="Line2D" parent="GuardCircle" unique_id=1239856960]
 points = PackedVector2Array(0, 0, 0, 0)
 closed = true
 width = 100.0
 default_color = Color(1, 0, 0, 1)
 
+[node name="Control" type="Control" parent="GuardCircle" unique_id=448390046]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="UpGuard" type="Button" parent="GuardCircle/Control" unique_id=1756730984]
+layout_mode = 0
+offset_left = -4300.0
+offset_top = -6500.0005
+offset_right = -4210.0
+offset_bottom = -6469.0005
+scale = Vector2(95.379, 90.84925)
+text = "UP GUARD"
+
+[node name="LeftGuard" type="Button" parent="GuardCircle/Control" unique_id=1581169494]
+visible = false
+layout_mode = 0
+offset_left = -6000.0
+offset_top = -2050.0
+offset_right = -5910.0
+offset_bottom = -1996.0
+rotation = 1.0995574
+scale = Vector2(95.379, 90.84925)
+text = "LEFT 
+GUARD"
+
+[node name="RightGuard" type="Button" parent="GuardCircle/Control" unique_id=129652067]
+visible = false
+layout_mode = 0
+offset_left = 1999.9985
+offset_top = 5600.0
+offset_right = 2089.9985
+offset_bottom = 5654.0
+rotation = -1.0297443
+scale = Vector2(95.379, 90.84925)
+text = "RIGHT
+
+ GUARD"
+
+[node name="StateChart" type="Node" parent="GuardCircle" unique_id=2108634279]
+script = ExtResource("3_cpr0p")
+metadata/_custom_type_script = "uid://couw105c3bde4"
+
+[node name="GuardState" type="Node" parent="GuardCircle/StateChart" unique_id=1591433860]
+script = ExtResource("4_s0nni")
+initial_state = NodePath("Up Guard")
+
+[node name="Up Guard" type="Node" parent="GuardCircle/StateChart/GuardState" unique_id=955112659]
+script = ExtResource("5_aug50")
+
+[node name="To Left Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Up Guard" unique_id=1571259921]
+script = ExtResource("7_400sg")
+to = NodePath("../../Left Guard")
+event = &"left_guard"
+delay_in_seconds = "0.0"
+
+[node name="To Right Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Up Guard" unique_id=1643560440]
+script = ExtResource("7_400sg")
+to = NodePath("../../Right Guard")
+event = &"right_guard"
+delay_in_seconds = "0.0"
+
+[node name="Left Guard" type="Node" parent="GuardCircle/StateChart/GuardState" unique_id=1439126737]
+script = ExtResource("5_aug50")
+
+[node name="To Up Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Left Guard" unique_id=382045434]
+script = ExtResource("7_400sg")
+to = NodePath("../../Up Guard")
+event = &"up_guard"
+delay_in_seconds = "0.0"
+
+[node name="To Right Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Left Guard" unique_id=1473600192]
+script = ExtResource("7_400sg")
+to = NodePath("../../Right Guard")
+event = &"right_guard"
+delay_in_seconds = "0.0"
+
+[node name="Right Guard" type="Node" parent="GuardCircle/StateChart/GuardState" unique_id=1501137668]
+script = ExtResource("5_aug50")
+
+[node name="To Up Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Right Guard" unique_id=760936190]
+script = ExtResource("7_400sg")
+to = NodePath("../../Up Guard")
+event = &"up_guard"
+delay_in_seconds = "0.0"
+
+[node name="To Left Guard" type="Node" parent="GuardCircle/StateChart/GuardState/Right Guard" unique_id=777090114]
+script = ExtResource("7_400sg")
+to = NodePath("../../Left Guard")
+event = &"left_guard"
+delay_in_seconds = "0.0"
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1588024192]
 position = Vector2(569, 309)
+
+[connection signal="state_processing" from="GuardCircle/StateChart/GuardState/Up Guard" to="GuardCircle" method="_on_up_guard_state_processing"]
+[connection signal="state_processing" from="GuardCircle/StateChart/GuardState/Left Guard" to="GuardCircle" method="_on_left_guard_state_processing"]
+[connection signal="state_processing" from="GuardCircle/StateChart/GuardState/Right Guard" to="GuardCircle" method="_on_right_guard_state_processing"]
