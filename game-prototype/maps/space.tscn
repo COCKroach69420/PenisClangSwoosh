@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://dstu5jr1njir6"]
+
+[ext_resource type="Script" uid="uid://c2g5wotu2dca6" path="res://maps/REMOVE.gd" id="1_1gilv"]
+[ext_resource type="PackedScene" uid="uid://b3fmb0d2llx1v" path="res://entities/player.tscn" id="1_owoyo"]
+[ext_resource type="Texture2D" uid="uid://ulcjn5bgr4ci" path="res://assets/place_holders/kenney_grid_textures/Orange/texture_01.png" id="2_2bl8t"]
+
+[sub_resource type="Environment" id="Environment_owoyo"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1gilv"]
+transparency = 1
+albedo_color = Color(1, 1, 1, 0.06666667)
+albedo_texture = ExtResource("2_2bl8t")
+uv1_triplanar = true
+uv1_world_triplanar = true
+uv2_triplanar = true
+uv2_world_triplanar = true
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_haqnw"]
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_1gvwg"]
+
+[node name="Space" type="Node3D" unique_id=1231077315]
+script = ExtResource("1_1gilv")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1030009938]
+environment = SubResource("Environment_owoyo")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1767370032]
+transform = Transform3D(1, 0, 0, 0, 0.7880108, 0.6156615, 0, -0.6156615, 0.7880108, 0, 7.6024523, 4.524024)
+
+[node name="Player" parent="." unique_id=1512022333 instance=ExtResource("1_owoyo")]
+
+[node name="Floor" type="StaticBody3D" parent="." unique_id=764726422]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=1973467255]
+transform = Transform3D(20, 0, 0, 0, 20, 0, 0, 0, 20, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_1gilv")
+mesh = SubResource("PlaneMesh_haqnw")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=1176021379]
+shape = SubResource("WorldBoundaryShape3D_1gvwg")
