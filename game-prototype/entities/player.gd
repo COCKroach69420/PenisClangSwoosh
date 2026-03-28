@@ -32,120 +32,91 @@ const _MOUSE_Y_ADJ: float = 2.0
 @export_range(-100, 0) var gravity_accel: float = -9.81
 @export_range(0, 100) var jump_speed: float = 5.0
 
+@export_group("GuardCircle")
+@export var le_guard_triangle: Sprite2D
+@export var up_guard_button: Button
+@export var left_guard_button: Button
+@export var right_guard_button: Button
+@export_range(150, 1050, 1) var THRESHOLD: float = 900.0
+
 @export_group("Nodes")
 @export var camera_controller: Node3D
 @export var camera: Camera3D
 @export var model: Node3D
 @export var state_chart: StateChart
 @export var anim_player: AnimationPlayer
+@export var anim_tree: AnimationTree
 
 
 @onready var _mouse_sens_y: float = MOUSE_SENS / _MOUSE_Y_ADJ
 @onready var _mouse_sens_x: float = MOUSE_SENS
 @onready var _last_move_dir:= Vector3.ZERO
-
+@onready var is_locked_on = false
 
 var _mouse_motion: Vector2
 var _raw_move_input: Vector2
 var _last_y_velocity: float
-var _model_general_dir: int
 
-var is_locked_on: bool = false
+var sum_mouse_motion = Vector2.ZERO
+var mouse_coords = Vector2.ZERO
 
-var curr_animation: String = "Idle/Idle"
+## GuardCircle vectors
+var left_vec = Vector2(1*cos(7*PI/6), 1*sin(7*PI/6))
+var right_vec = Vector2(1*cos(11*PI/6), 1*sin(11*PI/6))
+var down_vec = Vector2(1*cos(PI/2), 1*sin(PI/2))
 
-
-#func _process(_delta: float) -> void:
-	#anim_player.play(curr_animation, 0.9)
-
-
-#func _physics_process(_delta: float) -> void:
-	#print(anim_player.current_animation)
-	#print(velocity)
+var dot_left: float
+var dot_right: float
+var dot_down: float
 
 
-## updates the _mouse_motion and applies the mouse sensitivity
-## to call on _unhandled_input
-func _camera_unhandled_input(event: InputEvent) -> void:
-	_mouse_motion.x = event.relative.x * _mouse_sens_x / _MOUSE_ADJ
-	_mouse_motion.y = event.relative.y * _mouse_sens_y / _MOUSE_ADJ
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Problema! Funge smooth col trackpad, ma scatticchia col mouse				  #
-# Testare che non sia perchè la camera si muove solo 1 volta per ogni frame	  #
-# Testare che non ci sia bisogno di lerp di camera attaccata col ray-cast	  #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-## moves the camera when unlocked;
-## to call on _process.
-func _camera_free_move_process(delta: float) -> void:
-	camera_controller.rotation.y -= _mouse_motion.x * delta
-	camera_controller.rotation.x -= _mouse_motion.y * delta
-	## to reset _mouse_motion else it continues to apply => continues to move camera
-	_mouse_motion = Vector2.ZERO
-	camera_controller.rotation.x =\
-			clampf(camera_controller.rotation.x, MIN_CAM_ANGLE, MAX_CAM_ANGLE)
-
-
-# #
-#	BACO! forse quando Vector3.UP e la look dir giacciono sulla stessa retta,
-#	il minchia si stende per terra come se Vector3.FORWARD fosse invece la mia
-#	normale
-#
-## moves the camera when locked on;
-## to call on _process.
-func _camera_locked_move_proces(global_target_pos: Vector3) -> void:
-	# var cam_up_dir: Vector3 = (global_target_pos - camera_controller.global_basis.z)\
-	# 							.normalized().rotated(Vector3.FORWARD, 90)
-	camera_controller.look_at(global_target_pos, Vector3.UP)
-
-
-## gets movement input;
-## to call on _physics_process for Grounded state.
-func get_move_input() -> void:
-	_raw_move_input = Input.get_vector("move_left", "move_right", "move_forward", "move_backwards")
-	_model_general_dir = get_model_general_direction()
-	#if _raw_move_input != Vector2.ZERO:
-		#print_anim_dir(_model_general_dir)
+func _process(_delta: float) -> void:
+	### AnimationTree ###
+	var rel_vel: Vector3 = velocity * model.transform.basis		## relative velocity
+	var model_vel: Vector2 = Vector2(rel_vel.x, rel_vel.z)
+	anim_tree.set("parameters/LockOff_BlendSpace1D/blend_position", velocity.normalized().length())
+	anim_tree.set("parameters/LockOn_BlendTree/WalkingBlendSpace2D/blend_position", model_vel.normalized())
+	var idle_blend: float = 1 - velocity.normalized().length()
+	anim_tree.set("parameters/LockOn_BlendTree/Walk-Idle/blend_amount", idle_blend)
 
 
 ## chooses the right root-motion animation... direciton
 ## to call on _physics_process for Physics State Machine
-func get_model_general_direction() -> int:
-	## forward dir, the normal one
-	var f_input_dir: Vector2 = _raw_move_input.normalized()
-	## left dir, rotated by +90 degrees
-	var l_input_dir: Vector2 = _raw_move_input.normalized().rotated(PI/2)
-	
-	var cam_dir_3: Vector3 = camera.basis.z
-	cam_dir_3.y = 0
-	cam_dir_3 = cam_dir_3.normalized()
-	var cam_dir: Vector2 = Vector2(cam_dir_3.x, cam_dir_3.z)
-	
-	var f_dot_cam: float = f_input_dir.dot(cam_dir)
-	var l_dot_cam: float = l_input_dir.dot(cam_dir)
-	if f_dot_cam > cos(PI/8):
-		return AnimDir.BACKWARDS
-	elif f_dot_cam < cos(7*PI/8):
-		return AnimDir.FORWARD
-	else:
-		## facing left relative to camera <=> l_dot_cam in lower half of graph
-										##<=> l_dot_cam < cos(PI/2)
-		if f_dot_cam > cos(3*PI/8):
-			if l_dot_cam < cos(PI/2):
-				return AnimDir.BACKWARDS_LEFT
-			else:
-				return AnimDir.BACKWARDS_RIGHT
-		elif f_dot_cam > cos(5*PI/8):
-			if l_dot_cam < cos(PI/2):
-				return AnimDir.LEFT
-			else:
-				return AnimDir.RIGHT
-		else:
-			if l_dot_cam < cos(PI/2):
-				return AnimDir.FORWARD_LEFT
-			else:
-				return AnimDir.FORWARD_RIGHT
+#func get_model_general_direction() -> int:
+	### forward dir, the normal one
+	#var f_input_dir: Vector2 = _raw_move_input.normalized()
+	### left dir, rotated by +90 degrees
+	#var l_input_dir: Vector2 = _raw_move_input.normalized().rotated(PI/2)
+	#
+	#var cam_dir_3: Vector3 = camera.basis.z
+	#cam_dir_3.y = 0
+	#cam_dir_3 = cam_dir_3.normalized()
+	#var cam_dir: Vector2 = Vector2(cam_dir_3.x, cam_dir_3.z)
+	#
+	#var f_dot_cam: float = f_input_dir.dot(cam_dir)
+	#var l_dot_cam: float = l_input_dir.dot(cam_dir)
+	#if f_dot_cam > cos(PI/8):
+		#return AnimDir.BACKWARDS
+	#elif f_dot_cam < cos(7*PI/8):
+		#return AnimDir.FORWARD
+	#else:
+		### facing left relative to camera <=> l_dot_cam in lower half of graph
+										###<=> l_dot_cam < cos(PI/2)
+		#if f_dot_cam > cos(3*PI/8):
+			#if l_dot_cam < cos(PI/2):
+				#return AnimDir.BACKWARDS_LEFT
+			#else:
+				#return AnimDir.BACKWARDS_RIGHT
+		#elif f_dot_cam > cos(5*PI/8):
+			#if l_dot_cam < cos(PI/2):
+				#return AnimDir.LEFT
+			#else:
+				#return AnimDir.RIGHT
+		#else:
+			#if l_dot_cam < cos(PI/2):
+				#return AnimDir.FORWARD_LEFT
+			#else:
+				#return AnimDir.FORWARD_RIGHT
 
 
 #func print_anim_dir(anim_dir: int) -> void:
@@ -167,6 +138,142 @@ func get_model_general_direction() -> int:
 		#AnimDir.RIGHT:
 			#print("RIGHT")
 
+
+###############################
+## GuardCircle state machine ##
+###############################
+
+### helper functions ###
+
+func is_guarding_up() -> bool:
+	if mouse_coords == Vector2.ZERO:
+		return false
+	return dot_left > cos(15*PI/24) && dot_right > cos(15*PI/24)
+
+func is_guarding_left() -> bool:
+	if mouse_coords == Vector2.ZERO:
+		return false
+	return dot_left > cos(15*PI/24) && dot_down > cos(15*PI/24)
+
+func is_guarding_right() -> bool:
+	if mouse_coords == Vector2.ZERO:
+		return false
+	return dot_right > cos(15*PI/24) && dot_down > cos(15*PI/24)
+
+
+### GuardCircle state machine calls ###
+
+func _on_guard_circle_state_unhandled_input(event: InputEvent) -> void:
+	if !is_locked_on:
+		return
+	
+	if event is InputEventMouseMotion:
+		var temp = Vector2(event.relative.x, event.relative.y)
+		if temp.length() > THRESHOLD || (sum_mouse_motion + temp).length() > THRESHOLD:
+			mouse_coords = temp
+			sum_mouse_motion = Vector2.ZERO
+		else:
+			sum_mouse_motion += temp
+
+func _on_guard_circle_state_processing(_delta: float) -> void:
+	if !is_locked_on:
+		return
+	
+	dot_left = mouse_coords.normalized().dot(left_vec)
+	dot_right = mouse_coords.normalized().dot(right_vec)
+	dot_down = mouse_coords.normalized().dot(down_vec)
+
+
+### UpGuard state calls ###
+
+func _on_up_guard_state_entered() -> void:
+	if !is_locked_on:
+		return
+	up_guard_button.show()
+
+func _on_up_guard_state_processing(_delta: float) -> void:
+	if is_guarding_left():
+		up_guard_button.hide()
+		state_chart.send_event("left_guard")
+	if is_guarding_right():
+		up_guard_button.hide()
+		state_chart.send_event("right_guard")
+
+
+### LeftGuard state calls ###
+
+func _on_left_guard_state_entered() -> void:
+	if !is_locked_on:
+		return
+	
+	left_guard_button.show()
+
+func _on_left_guard_state_processing(_delta: float) -> void:
+	if is_guarding_up():
+		left_guard_button.hide()
+		state_chart.send_event("up_guard")
+	if is_guarding_right():
+		left_guard_button.hide()
+		state_chart.send_event("right_guard")
+
+
+### RightGuard state calls ###
+
+func _on_right_guard_state_entered() -> void:
+	if !is_locked_on:
+		return
+	right_guard_button.show()
+
+func _on_right_guard_state_processing(_delta: float) -> void:
+	if is_guarding_up():
+		right_guard_button.hide()
+		state_chart.send_event("up_guard")
+	if is_guarding_left():
+		right_guard_button.hide()
+		state_chart.send_event("left_guard")
+
+
+###########################
+## Physics state machine ##
+###########################
+
+### helper functions ###
+
+## updates the _mouse_motion and applies the mouse sensitivity
+## to call on _unhandled_input
+func _camera_unhandled_input(event: InputEvent) -> void:
+	_mouse_motion.x = event.relative.x * _mouse_sens_x / _MOUSE_ADJ
+	_mouse_motion.y = event.relative.y * _mouse_sens_y / _MOUSE_ADJ
+
+## moves the camera when unlocked;
+## to call on _process.
+func _camera_free_move_process(delta: float) -> void:
+	camera_controller.rotation.y -= _mouse_motion.x * delta
+	camera_controller.rotation.x -= _mouse_motion.y * delta
+	## to reset _mouse_motion else it continues to apply => continues to move camera
+	_mouse_motion = Vector2.ZERO
+	camera_controller.rotation.x =\
+			clampf(camera_controller.rotation.x, MIN_CAM_ANGLE, MAX_CAM_ANGLE)
+
+# #
+#	BACO! forse quando Vector3.UP e la look dir giacciono sulla stessa retta,
+#	il minchia si stende per terra come se Vector3.FORWARD fosse invece la mia
+#	normale
+#
+## moves the camera when locked on;
+## to call on _process.
+func _camera_locked_move_proces(global_target_pos: Vector3) -> void:
+	# var cam_up_dir: Vector3 = (global_target_pos - camera_controller.global_basis.z)\
+	# 							.normalized().rotated(Vector3.FORWARD, 90)
+	camera_controller.look_at(global_target_pos, Vector3.UP)
+
+## gets movement input;
+## to call on _physics_process for Grounded state.
+func get_move_input() -> void:
+	_raw_move_input = Input.get_vector("move_left", "move_right", "move_forward", "move_backwards")
+	# _model_general_dir = get_model_general_direction()
+	#if _raw_move_input != Vector2.ZERO:
+		#print_anim_dir(_model_general_dir)
 
 ## moves the player;
 ## to call on _physics_process for Grounded state.
@@ -191,10 +298,6 @@ func move_physics_process(delta: float) -> void:
 		_last_move_dir = move_dir
 
 
-###########################
-## Physics state machine ##
-###########################
-
 ### UnlockedCamMotion calls ###
 
 func _on_unlocked_cam_motion_state_unhandled_input(event: InputEvent) -> void:
@@ -205,6 +308,9 @@ func _on_unlocked_cam_motion_state_unhandled_input(event: InputEvent) -> void:
 func _on_unlocked_cam_motion_state_processing(delta: float) -> void:
 	if Input.is_action_just_pressed("lock_on"):
 		is_locked_on = true
+		le_guard_triangle.show()
+		up_guard_button.show()
+		state_chart.send_event("up_guard")
 		state_chart.send_event("camera_is_locked")
 	_camera_free_move_process(delta)
 
@@ -226,6 +332,16 @@ func _on_unlocked_cam_motion_state_physics_processing(delta: float) -> void:
 func _on_locked_cam_motion_state_processing(_delta: float) -> void:
 	if Input.is_action_just_pressed("lock_on"):
 		is_locked_on = false
+		## resetting GuardCircle attributes
+		le_guard_triangle.hide()
+		if up_guard_button.visible:
+			up_guard_button.hide()
+		if left_guard_button.visible:
+			left_guard_button.hide()
+		if right_guard_button.visible:
+			right_guard_button.hide()
+		mouse_coords = Vector2.ZERO
+		sum_mouse_motion = Vector2.ZERO
 		state_chart.send_event("camera_is_unlocked")
 	_camera_locked_move_proces(Vector3.ZERO)
 
@@ -245,34 +361,34 @@ func _on_locked_cam_motion_state_physics_processing(delta: float) -> void:
 
 ### Idle calls ###
 
-func _on_idle_state_processing(_delta: float) -> void:
-	if velocity != Vector3.ZERO:
-		state_chart.send_event("is_walking")
-	curr_animation = "Idle/Idle"
+#func _on_idle_state_processing(_delta: float) -> void:
+	#if velocity != Vector3.ZERO:
+		#state_chart.send_event("is_walking")
+	#curr_animation = "Idle/Idle"
 
 
 ### Walking calls ###
 
-func _on_walking_state_processing(_delta: float) -> void:
-	if velocity == Vector3.ZERO:
-		state_chart.send_event("is_idle")
-	if !is_locked_on:
-		curr_animation = "Walk/Walk_Forward"
-	else:
-		match _model_general_dir:
-			AnimDir.BACKWARDS:
-				curr_animation = "Walk/Walk_Backwards"
-			AnimDir.BACKWARDS_LEFT:
-				curr_animation = "Walk/Walk_BackwardsLeft"
-			AnimDir.BACKWARDS_RIGHT:
-				curr_animation = "Walk/Walk_BackwardsRight"
-			AnimDir.FORWARD:
-				curr_animation = "Walk/Walk_Forward"
-			AnimDir.FORWARD_LEFT:
-				curr_animation = "Walk/Walk_ForwardLeft"
-			AnimDir.FORWARD_RIGHT:
-				curr_animation = "Walk/Walk_ForwardRight"
-			AnimDir.LEFT:
-				curr_animation = "Walk/Walk_Left"
-			AnimDir.RIGHT:
-				curr_animation = "Walk/Walk_Right"
+#func _on_walking_state_processing(_delta: float) -> void:
+	#if velocity == Vector3.ZERO:
+		#state_chart.send_event("is_idle")
+	#if !is_locked_on:
+		#curr_animation = "Walk/Walk_Forward"
+	#else:
+		#match _model_general_dir:
+			#AnimDir.BACKWARDS:
+				#curr_animation = "Walk/Walk_Backwards"
+			#AnimDir.BACKWARDS_LEFT:
+				#curr_animation = "Walk/Walk_BackwardsLeft"
+			#AnimDir.BACKWARDS_RIGHT:
+				#curr_animation = "Walk/Walk_BackwardsRight"
+			#AnimDir.FORWARD:
+				#curr_animation = "Walk/Walk_Forward"
+			#AnimDir.FORWARD_LEFT:
+				#curr_animation = "Walk/Walk_ForwardLeft"
+			#AnimDir.FORWARD_RIGHT:
+				#curr_animation = "Walk/Walk_ForwardRight"
+			#AnimDir.LEFT:
+				#curr_animation = "Walk/Walk_Left"
+			#AnimDir.RIGHT:
+				#curr_animation = "Walk/Walk_Right"

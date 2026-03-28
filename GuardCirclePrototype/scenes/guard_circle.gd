@@ -33,8 +33,6 @@ var dot_left: float
 var dot_right: float
 var dot_down: float
 
-var current_guard: int
-
 
 func _enter_tree() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -97,7 +95,7 @@ func _on_up_guard_state_processing(_delta: float) -> void:
 		state_machine.send_event("right_guard")
 
 
-func _on_left_guard_state_processing(delta: float) -> void:
+func _on_left_guard_state_processing(_delta: float) -> void:
 	left_guard_button.show()
 	## guard up
 	if is_guarding_up():
@@ -109,7 +107,7 @@ func _on_left_guard_state_processing(delta: float) -> void:
 		state_machine.send_event("right_guard")
 
 
-func _on_right_guard_state_processing(delta: float) -> void:
+func _on_right_guard_state_processing(_delta: float) -> void:
 	right_guard_button.show()
 	if is_guarding_up():
 		right_guard_button.hide()

@@ -25,9 +25,9 @@ left_line = NodePath("LeftLine")
 right_line = NodePath("RightLine")
 down_line = NodePath("DownLine")
 mouse_line = NodePath("MouseLine")
-up_guard_button = NodePath("Control/UpGuard")
-left_guard_button = NodePath("Control/LeftGuard")
-right_guard_button = NodePath("Control/RightGuard")
+up_guard_button = NodePath("GuardGui/UpGuard")
+left_guard_button = NodePath("GuardGui/LeftGuard")
+right_guard_button = NodePath("GuardGui/RightGuard")
 state_machine = NodePath("StateChart")
 THRESHOLD = 895.0
 
@@ -52,11 +52,11 @@ closed = true
 width = 100.0
 default_color = Color(1, 0, 0, 1)
 
-[node name="Control" type="Control" parent="GuardCircle" unique_id=448390046]
+[node name="GuardGui" type="Control" parent="GuardCircle" unique_id=448390046]
 layout_mode = 3
 anchors_preset = 0
 
-[node name="UpGuard" type="Button" parent="GuardCircle/Control" unique_id=1756730984]
+[node name="UpGuard" type="Button" parent="GuardCircle/GuardGui" unique_id=1756730984]
 layout_mode = 0
 offset_left = -4300.0
 offset_top = -6500.0005
@@ -65,7 +65,7 @@ offset_bottom = -6469.0005
 scale = Vector2(95.379, 90.84925)
 text = "UP GUARD"
 
-[node name="LeftGuard" type="Button" parent="GuardCircle/Control" unique_id=1581169494]
+[node name="LeftGuard" type="Button" parent="GuardCircle/GuardGui" unique_id=1581169494]
 visible = false
 layout_mode = 0
 offset_left = -6000.0
@@ -77,7 +77,7 @@ scale = Vector2(95.379, 90.84925)
 text = "LEFT 
 GUARD"
 
-[node name="RightGuard" type="Button" parent="GuardCircle/Control" unique_id=129652067]
+[node name="RightGuard" type="Button" parent="GuardCircle/GuardGui" unique_id=129652067]
 visible = false
 layout_mode = 0
 offset_left = 1999.9985
